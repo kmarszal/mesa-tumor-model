@@ -18,6 +18,8 @@ class TumorModel(Model):
             for j in range(self.grid.height):
                 if i == j == 0 or i == j == 9:
                     a = CellAgent(j * width + i, self, 1)
+                elif i == j == 5:
+                    a = ProliferativeCellAgent(j * width + i, self, 0)
                 else:
                     a = CellAgent(j * width + i, self, 0)
                 self.schedule.add(a)
@@ -52,9 +54,27 @@ class CellAgent(Agent):
         self.diffusion_step()
 
 
+class ProliferativeCellAgent(CellAgent):
+    def step(self):
+        super().step()
+        neighbors = self.model.grid.get_neighborhood(self.pos, True, include_center=False)
+        non_tumor_cells = [cell for cell in self.model.grid.get_cell_list_contents(neighbors) if isinstance(cell, CellAgent)]
+        if len(non_tumor_cells) > 0:
+            other_agent = self.random.choice(non_tumor_cells)
+            a = ProliferativeCellAgent(other_agent.unique_id, other_agent.model, other_agent.C)
+            pos = other_agent.pos
+            self.model.grid.remove_agent(other_agent)
+            self.model.schedule.remove(other_agent)
+            self.model.schedule.add(a)
+            self.model.grid.place_agent(a, pos)
+
+
 def agent_portrayal(agent):
     portrayal = dict(Shape="circle", Filled="true", Layer=0, r=1)
-    portrayal["Color"] = "#0000aa" + hex(int(agent.C * 255 / 16))[-1] + hex(int(agent.C * 255 % 16))[-1]
+    if isinstance(agent, ProliferativeCellAgent):
+        portrayal["Color"] = "#00aaaa"
+    else:
+        portrayal["Color"] = "#0000aa" + hex(int(agent.C * 255 / 16))[-1] + hex(int(agent.C * 255 % 16))[-1]
     return portrayal
 
 
