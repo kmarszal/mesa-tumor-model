@@ -6,8 +6,19 @@ from mesa.visualization.ModularVisualization import ModularServer
 from mesa.datacollection import DataCollector
 
 
+# transfer a random cell from possible_cells to passed cell_type
+def transfer(agent, cell_type, possible_cells):
+    other_agent = agent.random.choice(possible_cells)
+    a = cell_type(other_agent.unique_id, other_agent.model, other_agent.C)
+    pos = other_agent.pos
+    agent.model.grid.remove_agent(other_agent)
+    agent.model.schedule.remove(other_agent)
+    agent.model.schedule.add(a)
+    agent.model.grid.place_agent(a, pos)
+
+
 class TumorModel(Model):
-    def __init__(self, width, height, diffusion_kernel, kde):
+    def __init__(self, width, height, kde):
         super().__init__()
         self.grid = MultiGrid(width, height, True)
         self.schedule = RandomActivation(self)
@@ -57,22 +68,54 @@ class CellAgent(Agent):
 class ProliferativeCellAgent(CellAgent):
     def step(self):
         super().step()
-        neighbors = self.model.grid.get_neighborhood(self.pos, True, include_center=False)
-        non_tumor_cells = [cell for cell in self.model.grid.get_cell_list_contents(neighbors) if isinstance(cell, CellAgent)]
-        if len(non_tumor_cells) > 0:
-            other_agent = self.random.choice(non_tumor_cells)
-            a = ProliferativeCellAgent(other_agent.unique_id, other_agent.model, other_agent.C)
-            pos = other_agent.pos
-            self.model.grid.remove_agent(other_agent)
-            self.model.schedule.remove(other_agent)
-            self.model.schedule.add(a)
-            self.model.grid.place_agent(a, pos)
+
+        # tumor growth
+        if proliferative_growth_rate > self.random.random():
+            neighbors = self.model.grid.get_neighborhood(self.pos, True, include_center=False)
+            non_tumor_cells = [cell for cell in self.model.grid.get_cell_list_contents(neighbors) if
+                               not (isinstance(cell, ProliferativeCellAgent) or isinstance(cell, QuiescentCellAgent) or isinstance(cell, DamagedQuiescentCellAgent))]
+            if len(non_tumor_cells) > 0:
+                transfer(self, ProliferativeCellAgent, non_tumor_cells)
+
+        # become quiescent
+        if proliferative_to_quiescent_rate > self.random.random():
+            transfer(self, QuiescentCellAgent, [self])
+
+        # become damaged
+        elif (any_to_damaged_rate * self.C) / (1 - proliferative_to_quiescent_rate) > self.random.random():
+            transfer(self, DamagedQuiescentCellAgent, [self])
+
+
+class QuiescentCellAgent(CellAgent):
+    def step(self):
+        super().step()
+
+        # become damaged
+        if any_to_damaged_rate * self.C > self.random.random():
+            transfer(self, DamagedQuiescentCellAgent, [self])
+
+
+class DamagedQuiescentCellAgent(CellAgent):
+    def step(self):
+        super().step()
+
+        # become proliferative again
+        if any_to_damaged_rate > self.random.random():
+            transfer(self, ProliferativeCellAgent, [self])
+
+        # become eliminated
+        elif damaged_elimination_rate / (1 - any_to_damaged_rate) > self.random.random():
+            transfer(self, CellAgent, [self])
 
 
 def agent_portrayal(agent):
     portrayal = dict(Shape="circle", Filled="true", Layer=0, r=1)
     if isinstance(agent, ProliferativeCellAgent):
         portrayal["Color"] = "#00aaaa"
+    elif isinstance(agent, QuiescentCellAgent):
+        portrayal["Color"] = "#007777"
+    elif isinstance(agent, DamagedQuiescentCellAgent):
+        portrayal["Color"] = "#003333"
     else:
         portrayal["Color"] = "#0000aa" + hex(int(agent.C * 255 / 16))[-1] + hex(int(agent.C * 255 % 16))[-1]
     return portrayal
@@ -82,10 +125,16 @@ diffusion_kernel = [[0.01, 0.02, 0.01],
                     [0.02, 1.0, 0.02],  # 0.88
                     [0.01, 0.02, 0.01]]
 
+proliferative_growth_rate = 0.5
+proliferative_to_quiescent_rate = 0.2
+any_to_damaged_rate = 0.2
+damaged_to_proliferative_rate = 0.1
+damaged_elimination_rate = 0.1
+
 grid = CanvasGrid(agent_portrayal, 10, 10, 500, 500)
 server = ModularServer(TumorModel,
                        [grid],
                        "Tumor Model",
-                       {"width": 10, "height": 10, "kde": 0, "diffusion_kernel": diffusion_kernel})
+                       {"width": 10, "height": 10, "kde": 0})
 server.port = 8521  # The default
 server.launch()
