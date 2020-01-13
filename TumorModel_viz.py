@@ -4,6 +4,7 @@ from mesa.space import MultiGrid
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.datacollection import DataCollector
+import numpy as np
 
 
 # transfer a random cell from possible_cells to passed cell_type
@@ -23,16 +24,16 @@ class TumorModel(Model):
         self.grid = MultiGrid(width, height, True)
         self.schedule = RandomActivation(self)
         self.running = True
+        self.step_number = 0
 
         # Create agents
         for i in range(self.grid.width):
             for j in range(self.grid.height):
-                if i == j == 0 or i == j == 9:
-                    a = CellAgent(j * width + i, self, 1)
-                elif i == j == 5:
-                    a = ProliferativeCellAgent(j * width + i, self, 0)
-                else:
-                    a = CellAgent(j * width + i, self, 0)
+                # uncomment to place a proliferative cell on the center
+                # if i == j == self.grid.width/2:
+                #     a = ProliferativeCellAgent(j * width + i, self, 0)
+                # else:
+                a = CellAgent(j * width + i, self, 0)
                 self.schedule.add(a)
                 self.grid.place_agent(a, (i, j))
 
@@ -42,6 +43,7 @@ class TumorModel(Model):
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
+        self.step_number += 1
 
 
 class CellAgent(Agent):
@@ -50,16 +52,36 @@ class CellAgent(Agent):
         self.C = C
 
     def diffusion_step(self):
+        if self.pos == (0, 0) or self.pos == (self.model.grid.width - 1, self.model.grid.height - 1):
+            if self.model.step_number < 200:
+                self.C = 1
+
+        kernel = np.copy(diffusion_kernel)
+
+        if self.pos[0] == 0:
+            kernel[:, 1] += kernel[:, 0]
+            kernel[:, 0] = 0
+        if self.pos[1] == 0:
+            kernel[1] += kernel[0]
+            kernel[0] = 0
+        if self.pos[0] == self.model.grid.height - 1:
+            kernel[:, 1] += kernel[:, 2]
+            kernel[:, 2] = 0
+        if self.pos[1] == self.model.grid.width - 1:
+            kernel[1] += kernel[2]
+            kernel[2] = 0
+
         x_range = int(len(diffusion_kernel[0])/2)
         y_range = int(len(diffusion_kernel)/2)
-        for i, muls in enumerate(diffusion_kernel, start=self.pos[0] - x_range):
-            for j, mul in enumerate(muls, start=self.pos[1] - y_range):
+        C = self.C
+        for i, muls in enumerate(kernel, start=self.pos[1] - x_range):
+            for j, mul in enumerate(muls, start=self.pos[0] - y_range):
                 if self.model.grid.width > i >= 0 and self.model.grid.height > j >= 0:
-                    if self.pos == (i, j):
+                    if self.pos == (j, i):
                         self.C *= mul
                     else:
-                        neighbor = self.model.grid.get_cell_list_contents([(i, j)])[0]
-                        neighbor.C = min(neighbor.C + self.C * mul, 1.0)
+                        neighbor = self.model.grid.get_cell_list_contents([(j, i)])[0]
+                        neighbor.C = neighbor.C + C * mul
 
     def step(self):
         self.diffusion_step()
@@ -117,13 +139,14 @@ def agent_portrayal(agent):
     elif isinstance(agent, DamagedQuiescentCellAgent):
         portrayal["Color"] = "#003333"
     else:
-        portrayal["Color"] = "#0000aa" + hex(int(agent.C * 255 / 16))[-1] + hex(int(agent.C * 255 % 16))[-1]
+        portrayal["Color"] = "#0000aa" + hex(int(min(agent.C, 1) * 255 / 16))[-1] + hex(int(min(agent.C, 1) * 255 % 16))[-1]
     return portrayal
 
 
-diffusion_kernel = [[0.01, 0.02, 0.01],
-                    [0.02, 1.0, 0.02],  # 0.88
-                    [0.01, 0.02, 0.01]]
+diffusion_kernel = np.array([[0.02, 0.04, 0.02],
+                             [0.04, 0.76, 0.04],
+                             [0.02, 0.04, 0.02]])
+
 
 proliferative_growth_rate = 0.5
 proliferative_to_quiescent_rate = 0.2
