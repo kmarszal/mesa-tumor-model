@@ -20,8 +20,8 @@ def agent_portrayal(agent):
 
 
 
-height = 25
-width = 25
+height = 20
+width = 20
 
 grid = CanvasGrid(agent_portrayal, height, width, 500, 500)
 chart = ChartModule([{"Label": "MTD",
