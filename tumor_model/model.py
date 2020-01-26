@@ -7,12 +7,16 @@ from math import sqrt
 
 MAX_TUMOR_SIZE_MM = 100
 
+def compute_MTD(m):
+    return sqrt(tumor_cells_count(m)) * MAX_TUMOR_SIZE_MM / m.grid.width
+
 class TumorModel(Model):
     def __init__(self, width, height,
             initial_tumor_size=2,
             first_cycle_offset=80,
             treatment_cycles=30,
             treatment_cycle_interval=4,
+            param_scale=1.0,
             kde=0.98, 
             proliferative_growth_rate=0.121,
             proliferative_to_quiescent_rate=0.03,
@@ -25,12 +29,12 @@ class TumorModel(Model):
         self.treatment_cycles = treatment_cycles
         self.treatment_cycle_interval = treatment_cycle_interval
         self.kde = kde
-        self.proliferative_growth_rate = proliferative_growth_rate
-        self.proliferative_elimination_rate = proliferative_elimination_rate
-        self.proliferative_to_quiescent_rate = proliferative_to_quiescent_rate
-        self.quiescent_to_damaged_rate = quiescent_to_damaged_rate
-        self.damaged_to_proliferative_rate = damaged_to_proliferative_rate
-        self.damaged_elimination_rate = damaged_elimination_rate
+        self.proliferative_growth_rate = proliferative_growth_rate * param_scale
+        self.proliferative_elimination_rate = proliferative_elimination_rate * param_scale
+        self.proliferative_to_quiescent_rate = proliferative_to_quiescent_rate * param_scale
+        self.quiescent_to_damaged_rate = quiescent_to_damaged_rate * param_scale
+        self.damaged_to_proliferative_rate = damaged_to_proliferative_rate * param_scale
+        self.damaged_elimination_rate = damaged_elimination_rate * param_scale
         super().__init__()
         self.grid = MultiGrid(width, height, torus=False)
         self.schedule = RandomActivation(self)
@@ -59,7 +63,7 @@ class TumorModel(Model):
 
         self.datacollector = DataCollector(
             agent_reporters={"C": "C"},
-            model_reporters={"MTD": (lambda m: sqrt(tumor_cells_count(m)) * MAX_TUMOR_SIZE_MM / self.grid.width)})
+            model_reporters={"MTD": compute_MTD})
 
     def step(self):
         if self.step_number >= self.first_cycle_offset and \
