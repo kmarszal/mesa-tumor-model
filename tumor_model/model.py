@@ -9,8 +9,8 @@ MAX_TUMOR_SIZE_MM = 100
 
 class TumorModel(Model):
     def __init__(self, width, height,
-            initial_tumor_size=5,
-            first_cycle_offset=10,
+            initial_tumor_size=2,
+            first_cycle_offset=80,
             treatment_cycles=30,
             treatment_cycle_interval=4,
             kde=0.98, 
