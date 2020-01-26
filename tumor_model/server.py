@@ -30,7 +30,7 @@ chart = ChartModule([{"Label": "MTD",
 model_params = { 
     "height": height,
     "width": width,
-    "kde": UserSettableParameter("slider", "KDE", 0.98, 0.95, 1.0, 0.0001),
+    "kde": UserSettableParameter("slider", "KDE", 0.27 * 3 / 4, 0, 1.0, 0.01),
     "initial_tumor_size": UserSettableParameter("slider", "initial tumor size", 2, 1, width // 2, 1),
     "first_cycle_offset": UserSettableParameter("slider", "first cycle offset", 80, 1, 200, 1),
     "treatment_cycles": UserSettableParameter("slider", "treatment cycles", 30, 0,50, 1),

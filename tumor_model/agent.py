@@ -2,10 +2,6 @@ from mesa import Agent
 import numpy as np
 from math import sqrt
 
-diffusion_kernel = np.array([[0.02, 0.04, 0.02],
-                             [0.04, 0.76, 0.04],
-                             [0.02, 0.04, 0.02]])
-
 # transfer a random cell from possible_cells to passed cell_type
 def transfer(agent, cell_type, possible_cells):
     other_agent = agent.random.choice(possible_cells)
@@ -36,37 +32,8 @@ class CellAgent(Agent):
         super().__init__(unique_id, model)
         self.C = C
 
-    def diffusion_step(self):
-        kernel = np.copy(diffusion_kernel) * self.model.kde
-
-        if self.pos[0] == 0:
-            kernel[:, 1] += kernel[:, 0]
-            kernel[:, 0] = 0
-        if self.pos[1] == 0:
-            kernel[1] += kernel[0]
-            kernel[0] = 0
-        if self.pos[0] == self.model.grid.height - 1:
-            kernel[:, 1] += kernel[:, 2]
-            kernel[:, 2] = 0
-        if self.pos[1] == self.model.grid.width - 1:
-            kernel[1] += kernel[2]
-            kernel[2] = 0
-
-        x_range = int(len(diffusion_kernel[0])/2)
-        y_range = int(len(diffusion_kernel)/2)
-        C = self.C
-        for i, muls in enumerate(kernel, start=self.pos[1] - x_range):
-            for j, mul in enumerate(muls, start=self.pos[0] - y_range):
-                if self.model.grid.width > i >= 0 and self.model.grid.height > j >= 0:
-                    if self.pos == (j, i):
-                        self.C *= mul
-                    else:
-                        neighbor = self.model.grid.get_cell_list_contents([(j, i)])[0]
-                        neighbor.C = neighbor.C + C * mul
-
-
     def step(self):
-        self.diffusion_step()
+        self.C = self.C * self.model.kde
 
 
 class ProliferativeCellAgent(CellAgent):

@@ -13,7 +13,7 @@ class TumorModel(Model):
             first_cycle_offset=80,
             treatment_cycles=30,
             treatment_cycle_interval=4,
-            kde=0.98, 
+            kde=0.27 * 3 / 4, 
             proliferative_growth_rate=0.121 * 3 / 4,
             proliferative_to_quiescent_rate=0.03 * 3 / 4,
             proliferative_elimination_rate=0.7 * 3 / 4,
@@ -70,11 +70,7 @@ class TumorModel(Model):
             for x in range(self.grid.width):
                 for y in range(self.grid.height):
                     cell = self.grid.get_cell_list_contents([(x,y)])[0]
-                    if cell.pos[0] == 0 or \
-                       cell.pos[1] == 0 or \
-                       cell.pos[0] == self.grid.width - 1 or \
-                       cell.pos[1] == self.grid.height - 1:
-                            cell.C = 1
+                    cell.C = 1
 
         self.datacollector.collect(self)
         self.schedule.step()
