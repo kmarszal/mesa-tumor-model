@@ -2,9 +2,9 @@ from mesa import Agent
 import numpy as np
 from math import sqrt
 
-diffusion_kernel = np.array([[0.02, 0.04, 0.02],
-                             [0.04, 0.76, 0.04],
-                             [0.02, 0.04, 0.02]])
+diffusion_kernel = np.array([[0.04, 0.08, 0.04],
+                             [0.08, 0.52, 0.08],
+                             [0.04, 0.08, 0.04]])
 
 # transfer a random cell from possible_cells to passed cell_type
 def transfer(agent, cell_type, possible_cells):
