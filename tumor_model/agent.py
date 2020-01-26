@@ -89,7 +89,7 @@ class ProliferativeCellAgent(CellAgent):
         if self.model.proliferative_to_quiescent_rate > self.random.random():
             transfer(self, QuiescentCellAgent, [self])
 
-        # become eliminated
+        # become eliminated - divide by (1 - proliferative_to_quiescent_rate) because conditional probability
         elif self.model.proliferative_elimination_rate * self.C / (1 - self.model.proliferative_to_quiescent_rate) > self.random.random():
             transfer(self, CellAgent, [self])
 
@@ -111,8 +111,7 @@ class DamagedQuiescentCellAgent(CellAgent):
         if self.model.damaged_to_proliferative_rate > self.random.random():
             transfer(self, ProliferativeCellAgent, [self])
 
-        # become eliminated
-        #elif self.model.damaged_elimination_rate / (1 - self.model.quiescent_to_damaged_rate) > self.random.random():
+        # become eliminated - divide by (1 - damaged_to_proliferative_rate) because conditional probability
         elif self.model.damaged_elimination_rate / (1 - self.model.damaged_to_proliferative_rate) > self.random.random():
             transfer(self, CellAgent, [self])
 
