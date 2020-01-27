@@ -40,6 +40,7 @@ class TumorModel(Model):
         self.schedule = RandomActivation(self)
         self.running = True
         self.step_number = 0
+        self.tumor_cells_count = initial_tumor_size ** 2
 
         # Calculate tumor area coordinates
         x1 = self.grid.width // 2 - self.initial_tumor_size // 2
@@ -79,7 +80,7 @@ class TumorModel(Model):
                        cell.pos[0] == self.grid.width - 1 or \
                        cell.pos[1] == self.grid.height - 1:
                             cell.C = 1
-
+        self.tumor_cells_count = tumor_cells_count(self)
         self.datacollector.collect(self)
         self.schedule.step()
         self.step_number += 1

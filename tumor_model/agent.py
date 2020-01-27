@@ -74,7 +74,7 @@ class ProliferativeCellAgent(CellAgent):
         super().step()
 
         # tumor growth
-        growth_prob = self.model.proliferative_growth_rate * (1 - sqrt(tumor_cells_count(self.model)) /
+        growth_prob = self.model.proliferative_growth_rate * (1 - sqrt(self.model.tumor_cells_count) /
                                 sqrt(self.model.grid.width * self.model.grid.height))
 #        growth_prob = self.model.proliferative_growth_rate
 
