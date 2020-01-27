@@ -37,7 +37,7 @@ class CellAgent(Agent):
         self.C = C
 
     def diffusion_step(self):
-        kernel = np.copy(diffusion_kernel) * self.model.kde
+        kernel = np.copy(diffusion_kernel) * self.model.dissolve_rate
 
         if self.pos[0] == 0:
             kernel[:, 1] += kernel[:, 0]
