@@ -17,7 +17,7 @@ class TumorModel(Model):
             treatment_cycles=30,
             treatment_cycle_interval=4,
             param_scale=1.0,
-            kde=0.98, 
+            kde=0.76, 
             proliferative_growth_rate=0.121,
             proliferative_to_quiescent_rate=0.03,
             proliferative_elimination_rate=0.7,
@@ -28,7 +28,7 @@ class TumorModel(Model):
         self.first_cycle_offset = first_cycle_offset
         self.treatment_cycles = treatment_cycles
         self.treatment_cycle_interval = treatment_cycle_interval
-        self.kde = kde
+        self.kde = kde * param_scale
         self.proliferative_growth_rate = proliferative_growth_rate * param_scale
         self.proliferative_elimination_rate = proliferative_elimination_rate * param_scale
         self.proliferative_to_quiescent_rate = proliferative_to_quiescent_rate * param_scale
